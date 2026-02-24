@@ -1,20 +1,45 @@
-pipeline{
-  agent any
-  stages{
-    stage ("version"){
-      steps {
-        sh 'terraform --version'
-      }
+pipeline {
+    agent any
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-creds'
+                ]]) {
+                    sh 'terraform init'
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-creds'
+                ]]) {
+                    sh 'terraform plan'
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-creds'
+                ]]) {
+                    sh 'terraform apply -auto-approve'
+                }
+            }
+        }
     }
-    stage ("init"){
-      steps {
-        sh 'terraform init'
-      }
-    }
-    stage ("plan"){
-      steps {
-        sh 'terraform plan'
-      }
-    }
-  }
 }
