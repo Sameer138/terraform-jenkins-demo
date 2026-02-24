@@ -1,55 +1,32 @@
+properties([ parameters([
+  string( name: 'AWS_ACCESS_KEY_ID', defaultValue: ''),
+  string( name: 'AWS_SECRET_ACCESS_KEY', defaultValue: ''),
+  string( name: 'AWS_REGION', defaultValue: ''),
+]), pipelineTriggers([]) ])
+
+// Environment Variables.
+env.access_key = AWS_ACCESS_KEY_ID
+env.secret_key = AWS_SECRET_ACCESS_KEY
+env.aws_region = AWS_REGION
+
+
 pipeline {
     agent any
-
-    environment {
-        AWS_DEFAULT_REGION = 'ap-south-1'
-        SECRET_NAME = 'terraform/jenkins/aws-credentials'
-    }
-    tools {
-  git 'Default'
-}
-
-
     stages {
-
-        stage('Checkout') {
+         stage ('Terraform Init'){
             steps {
-                checkout scm
-            }
-        }
-
-        stage('Fetch AWS Credentials from Secrets Manager') {
+            sh "export TF_VAR_aws_region='${env.aws_region}' && terraform init"
+          }
+       }
+         stage ('Terraform Plan'){
             steps {
-                script {
-                    def secret = sh(
-                        script: "aws secretsmanager get-secret-value --secret-id ${SECRET_NAME} --query SecretString --output text",
-                        returnStdout: true
-                    ).trim()
-
-                    def secretJson = readJSON text: secret
-
-                    env.AWS_ACCESS_KEY_ID = secretJson.AWS_ACCESS_KEY_ID
-                    env.AWS_SECRET_ACCESS_KEY = secretJson.AWS_SECRET_ACCESS_KEY
-                }
-            }
-        }
-
-        stage('Terraform Init') {
+            sh "export TF_VAR_aws_region='${env.aws_region}' && terraform plan" 
+         }
+      }
+         stage ('Terraform Apply & Deploy Docker Image on Webserver'){
             steps {
-                sh 'terraform init'
-            }
+            sh "export TF_VAR_aws_region='${env.aws_region}' && terraform apply -auto-approve"
         }
-
-        stage('Terraform Plan') {
-            steps {
-                sh 'terraform plan -var="bucket_name=sameer-jenkins-terraform-bucket"'
-            }
-        }
-
-        stage('Terraform Apply') {
-            steps {
-                sh 'terraform apply -auto-approve -var="bucket_name=sameer-jenkins-terraform-bucket"'
-            }
-        }
+      }
     }
-}
+  }
