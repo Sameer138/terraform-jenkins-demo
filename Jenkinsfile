@@ -5,6 +5,10 @@ pipeline {
         AWS_DEFAULT_REGION = 'ap-south-1'
         SECRET_NAME = 'terraform/jenkins/aws-credentials'
     }
+    tools {
+  git 'Default'
+}
+
 
     stages {
 
