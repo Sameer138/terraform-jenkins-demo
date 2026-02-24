@@ -1,6 +1,11 @@
 pipleline{
   agent any
   stages{
+    stage ("version"){
+      steps {
+        sh 'terraform --version'
+      }
+    }
     stage ("init"){
       steps {
         sh 'terraform init'
